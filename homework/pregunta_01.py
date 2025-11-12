@@ -4,7 +4,8 @@
 """
 Escriba el codigo que ejecute la accion solicitada en cada pregunta.
 """
-
+import os
+import pandas as pd
 
 def pregunta_01():
     """
@@ -71,3 +72,68 @@ def pregunta_01():
 
 
     """
+    data_set=generar_dataset()
+    entrega_base(data_set)
+
+def encontrar_elementos(x):
+    if "test" in x:
+        return "test"
+    elif "train" in x:
+        return "train"
+    else:
+        print("Se encontro una carpeta no esperada")
+        return "Unknown"
+    
+def find_target(x):
+    if "negative" in x:
+        return "negative"
+    elif "positive" in x:
+        return "positive"
+    elif "neutral" in x:
+        return "neutral"
+    else:
+        print("Se encontro un target inesperado")
+        return "Unknown"
+    
+def generar_dataset():    
+    carpeta="files/input"
+    subcarpetas=os.listdir(carpeta)
+    datasets={}
+
+# Inicializar listas vacías para cada subcarpeta de manera 
+# que tenga todas las claves necesasrias y las frases en un mismo lugar
+    for i in subcarpetas:
+        datasets[i]=[]
+
+#Entro en cada subcarpeta
+    for root, _, files in os.walk(carpeta):
+# Entro en cada archivo y uno por uno leo lo que hay en ellos        
+        for file in files:
+            file_path = os.path.join(root, file)
+            with open(file_path, 'r', encoding='utf-8') as f:
+# Hago una "pequeña limpieza" de cada linea
+                for line in f:
+                    phrase=line.strip()
+# Busco el target y carpetas correspondiente a cada una de las frases 
+# para finalmente agregarlas al diccionario
+                    target=find_target(file_path)
+                    enc_carpeta=encontrar_elementos(file_path)
+                    datasets[enc_carpeta].append([phrase,target])
+    return datasets
+
+def entrega_base(x):
+    columnas =["phrase","target"]
+    carpeta_salida="files/output"
+    dfs= {}
+    #Creo la carpeta de salida si no existe
+    os.makedirs(carpeta_salida, exist_ok=True)
+    for nombre, datos in x.items():
+        df=pd.DataFrame(datos, columns=columnas)
+    #Se crea la ruta completa del archivo y posteriormente se guarda el DataFrame en un archivo CSV
+    #como CSV con el indice desactivado
+        archivo=os.path.join(carpeta_salida, f"{nombre}_dataset.csv")
+        df.to_csv(archivo, index=False)
+    #Se almacena el DataFrame en el diccionario de DataFrames por si 
+    #se quiere usar despues para algún análisis
+        dfs[nombre]=df
+    return dfs
